@@ -4,7 +4,7 @@
 
 This repository contains the workflow for classification of homologous recombination deficient breast cancers via mutational signature classification and transcriptomic signature approaches.
 
-![alt text](TCGA_HRDclassification_heatmap.pdf)
+![alt text](TCGA_HRDclassification_heatmap.jpg)
 
 # Copyright
 
