@@ -1,8 +1,8 @@
 cff-version: 1.0.0
 message: "If you use this software, please cite it as below."
 authors:
-- family-names: "Daniel"
-  given-names: "JH"
+- family-names: "Jacobson"
+  given-names: "DH"
 - family-names: "Pan"
   given-names: "S"
 - family-names: "Fisher"
