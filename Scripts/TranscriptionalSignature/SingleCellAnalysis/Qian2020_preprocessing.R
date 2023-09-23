@@ -2,7 +2,7 @@
 ## Preprocessing Qian et al 2020 BC dataset
 #####
 
-setwd('~/Documents/GitHub/HRD_classification/')
+setwd('~/Data/scRNASeq/Qian2020/')
 
 # Load libraries
 library(Seurat)
@@ -11,7 +11,7 @@ library(cowplot)
 
 # Load Qian et al. 2020 data
 bc.data <- Read10X(data.dir = 
-                     '~/Documents/PhD/Data/scRNASeq/export/BC_counts/')
+                     '~/Data/scRNASeq/Qian2020/export/BC_counts/')
 
 # Initialize the Seurat object with the raw (non-normalized) data
 #   init: 33694 genes, 44024 cells
@@ -45,7 +45,7 @@ seurat <- CreateSeuratObject(counts = bc.data,
                              project = '10x_bc', assay = 'RNA')
 
 ## Load metadata
-anno <- read.csv('~/Documents/PhD/Data/scRNASeq/2103-Breastcancer_metadata.csv', header = TRUE)
+anno <- read.csv('2103-Breastcancer_metadata.csv', header = TRUE)
 meta.data <- seurat@meta.data
 all(rownames(meta.data) == anno$Cell)
 seurat$CellFromTumor <- anno$CellFromTumor
@@ -87,5 +87,4 @@ seurat <- NormalizeData(object = seurat, normalization.method = 'LogNormalize',
 
 # Save scRNA-seq data
 expr.data_qian2020 <- as.matrix(GetAssayData(seurat, slot = 'data'))
-save(expr.data_qian2020, file = '~/Documents/PhD/Data/scRNASeq/exprData_Qian2020.Rdata')
-
+save(expr.data_qian2020, file = 'exprData_Qian2020.Rdata')
