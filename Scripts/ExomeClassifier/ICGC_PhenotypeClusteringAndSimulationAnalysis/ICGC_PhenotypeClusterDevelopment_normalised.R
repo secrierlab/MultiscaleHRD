@@ -2,7 +2,7 @@
 ## Creation of signature phenotypes in 614 ICGC-BRCA samples
 #####
 
-setwd('~/Documents/GitHub/HRD_classification/')
+setwd('~/Projects/HRD_MutationalSignature/Results/')
 
 # Load libraries
 library(mclust)
@@ -13,13 +13,14 @@ library(ggplot2)
 library(dplyr)
 
 # Load ICGC deconstructSigs data
-load('Data/ICGC_BRCA/ICGC_BRCA_deconstructSigs_Cutoff05.Rdata')
+load('ICGC_BRCA_deconstructSigs_Cutoff0.01_SBSandIDnormalised.Rdata')
 
 # Run mixture modelling using mclust
-sigs.BIC <- mclustBIC(sigs_complete, G = 2:20)
+sigs.BIC <- mclustBIC(sigs_complete, G = 10:25,
+                      modelNames = c('EEI','VII','EII'))
 summary(sigs.BIC) # Top clusters: VEI, 19, 20, 16
 
-pdf(file = 'Figures/Supplementary/ICGC_Signatures_MixtureModelling.pdf',
+pdf(file = '../Figures/Supp_ICGCSignaturesMixtureModelling.pdf',
     width = 5, height = 5)
 plot(sigs.BIC) # save this plot
 dev.off()
@@ -31,14 +32,14 @@ table(mod_sigs.BIC$classification) # classification
 ## Form annotation document for visualisation
 
 # CHORD
-chord <- read_excel('~/Downloads/41467_2020_19406_MOESM4_ESM.xlsx', sheet = 'CHORD')
+chord <- read_excel('~/Data/ICGC/CHORD_output.xlsx', sheet = 'CHORD')
 chord <- chord[!grepl(pattern = 'HMF', chord$group), ]
 chord <- chord[,c('sample','response','hr_status','hrd_type')]
 names(chord)[3:4] <- c('CHORD', 'CHORD_type')
 
 # HRDetect
-hrdetect.samples <- read_excel('~/Downloads/41591_2017_BFnm4292_MOESM9_ESM.xlsx', sheet = 'Data', skip = 2)
-hrdetect.pred <- read_excel('~/Downloads/41591_2017_BFnm4292_MOESM11_ESM.xlsx', sheet = 'b.Predictor', skip = 2)
+hrdetect.samples <- read_excel('~/Data/ICGC/HRDetect_sampleInfo.xlsx', sheet = 'Data', skip = 2)
+hrdetect.pred <- read_excel('~/Data/ICGC/HRDetect_predictions.xlsx', sheet = 'b.Predictor', skip = 2)
 hrdetect.pred <- hrdetect.pred[match(hrdetect.samples$Sample, hrdetect.pred$sample), ]
 
 hrdetect <- merge(x = hrdetect.samples[,c(1,3:8)],
@@ -55,8 +56,8 @@ table(hrdetect$BRCA_defect, hrdetect$HRDetect > .7,
       dnn = c('BRCA_defect', 'score > .7'), useNA = 'always')
 
 # Load ICGC sample data (for sampleID matching)
-samples.eu <- read.table('~/Downloads/sample.BRCA-EU.tsv', h=T, sep='\t')
-samples.uk <- read.table('~/Downloads/sample.BRCA-UK.tsv', h=T, sep='\t')
+samples.eu <- read.table('~/Data/ICGC/sample.BRCA-EU.tsv.gz', h=T, sep='\t')
+samples.uk <- read.table('~/Data/ICGC/sample.BRCA-UK.tsv.gz', h=T, sep='\t')
 samples.icgc <- rbind(samples.eu, samples.uk)
 samples.icgc <- samples.icgc[,c('project_code','submitted_sample_id','icgc_donor_id')]
 samples.icgc <- samples.icgc[!duplicated(samples.icgc$icgc_donor_id), ]
@@ -109,15 +110,27 @@ pheatmap(sigs_order, cluster_cols = FALSE, show_colnames = FALSE,
          color = cols_scale)
 
 # Naming clusters as signature phenotypes (by sight based on above heatmap)
-pheno <- c('SBS5_1', 'HRD_ID8', 'HRD_ID6high', 'HRD_APOBEC',
-           'SBS5_2', 'SBS5_SBS18', 'SBS5_3', 'APOBEC_ID9',
-           'HRD_IDmult', 'SBS5_4', 'SBS5_5', 'APOBEC_SBS2',
-           'SBS5_6', 'SBS5_7', 'APOBEC_SBS13', 'HRD_ID9',
-           'HRD_ID6mid', 'ID4', 'ID2')
+pheno <- c('SBS5_1','HRD_ID8','HRD_ID6high','HRD_APOBEC','SBS5_SBS18',
+           'SBS5_2','SBS5_3','SBS5_4','APOBEC_ID9','SBS5_5',
+           'HRD_SBS8','APOBEC_SBS2','APOBEC_SBS13','SBS5_ID5','SBS5_6',
+           'HRD_ID9','HRD_ID4','HRD_ID6mid','MMRD','SBS5_SBS39',
+           'clustSmall1','clustSmall2')
+# pheno <- c('SBS5_1', 'HRD_ID8high', 'HRD_ID9high', 'HRD_APOBEC', 'HRD_ID6high',
+#            'HRD_ID8mid', 'SBS5_2', 'SBS5_SBS18', 'SBS5_3', 'SBS5_4',
+#            'APOBEC_SBS2', 'SBS5_5', 'APOBEC_ID9', 'SBS5_6', 'SBS5_7',
+#            'APOBEC_SBS13', 'SBS5_8', 'ID4', 'HRD_ID9mid', 'SBS5_ID1',
+#            'HRD_SBS8', 'SBS5_SBS39', 'HRD_ID6mid', 'MMRD')
 
 ann$Phenotype <- factor(pheno[as.numeric(ann$BIC_clust)],
                         levels = sort(pheno))
-save(ann, file = 'Data/ICGC_BRCA/ICGC_BRCA_PhenotypeAnnotation.Rdata')
+
+# Remove uninformative clusters:
+ann <- ann[!(ann$Phenotype %in% c('clustSmall1','clustSmall2')), ]
+
+pheno <- pheno[!(pheno %in% c('clustSmall1','clustSmall2'))]
+ann$Phenotype <- factor(ann$Phenotype, levels = sort(pheno))
+
+save(ann, file = '~/Projects/HRD_MutationalSignature/Results/ICGC_BRCA_IDnormalised_PhenotypeAnnotation_clust20.Rdata')
 
 ann <- ann[order(ann$Phenotype), ]
 
@@ -139,8 +152,9 @@ pheatmap(sigs_order, cluster_cols = FALSE, show_colnames = FALSE,
          annotation_col = ann[,c('Phenotype','BRCA_defect', 'ER_status',
                                  'HRDetect', 'CHORD', 'CHORD_type')], 
          annotation_colors = ann_colors,
-         color = cols_scale, fontsize = 8, fontsize_row = 10,
-         filename = 'Figures/Figure1/ICGC_Signatures_Heatmap.pdf')
+         color = cols_scale, fontsize = 8, fontsize_row = 10
+         ,filename = '../Figures/Supp_ICGCSignaturesHeatmap.pdf'
+         )
 
 ## Investigate BRCA-defect distribution across HRD classifications
 ##   using the 'ann' data frame
@@ -156,19 +170,6 @@ table(ann.hrd$BRCA_defect, ann.hrd$HRD_cluster,
 
 ann.hrd$BRCA_defective <- ifelse(is.na(ann.hrd$BRCA_defect), 'BRCA+', 'BRCA_defective')
 ann.hrd$HRD <- ifelse(grepl(pattern = 'HRD', ann.hrd$Phenotype), 'HRD', 'HR-proficient')
-ann.hrd_summary <- ann.hrd %>%
-  group_by(BRCA_defective, HRD) %>%
-  summarise(n = n())
-
-g_annHRDsummary <- ggplot(ann.hrd_summary, aes(x = BRCA_defective, y = n, fill = HRD)) +
-  geom_bar(stat = 'identity', position = 'fill') + theme_minimal() +
-  scale_fill_brewer(palette="Paired") +
-  theme(axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        legend.position = 'top',
-        legend.title = element_blank())
-ggsave(filename = 'Figures/Figure1/ICGC_Signatures_HRDclassify.pdf', 
-       plot = g_annHRDsummary, width = 3, height = 3)
 
 # HRDetect > 0.7: sensitivity = 98.7%, specificity = 61.7%
 table(ann.hrd$BRCA_defect, ann.hrd$HRDetect > 0.7,
@@ -178,27 +179,33 @@ table(ann.hrd$BRCA_defect, ann.hrd$HRDetect > 0.7,
 table(ann.hrd$BRCA_defect, ann.hrd$CHORD,
       dnn = c('BRCA_defect', 'CHORD'), useNA = 'always')
 
+ann.hrd_summary <- ann.hrd %>%
+  group_by(HRD, BRCA_defective) %>%
+  summarise(n = n())
+ann.hrd_summary$HRD <- factor(ann.hrd_summary$HRD, levels = c('HR-proficient','HRD'))
+ann.hrd_summary$BRCA_defective <- factor(ann.hrd_summary$BRCA_defective, levels = c('BRCA_defective','BRCA+'))
+
+g_annHRDsummary <- ggplot(ann.hrd_summary, aes(x = BRCA_defective, y = n, fill = HRD)) +
+  geom_bar(stat = 'identity', position = 'fill') + theme_minimal() +
+  scale_fill_brewer(palette = 'Paired') +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = 'top',
+        legend.title = element_blank())
+ggsave(filename = '../Figures/Supp_ICGCHRDclassify.pdf',
+       plot = g_annHRDsummary, width = 5, height = 6)
+
+
 ## BRCA-type specific HRD classification
 
-hrd.brca1_type <- c('HRD_APOBEC', 'HRD_ID8', 'HRD_IDmult')
-hrd.brca2_type <- c('HRD_ID6mid', 'HRD_ID6high')
-
-ann.hrd$HRD_BRCA_cluster <- 'HR-proficient'
-ann.hrd$HRD_BRCA_cluster[ann.hrd$Phenotype %in% hrd.brca1_type] <- 'HRD_BRCA1type'
-ann.hrd$HRD_BRCA_cluster[ann.hrd$Phenotype %in% hrd.brca2_type] <- 'HRD_BRCA2type'
-
-# HRD signature phenotypes:
-#   BRCA1: sensitivity = 88.9%, specificity = 47.1%
-#   BRCA2: sensitivity = 86.7%, specificity = 54.2%
-table(ann.hrd$BRCA_defect, ann.hrd$HRD_BRCA_cluster,
-      dnn = c('BRCA_defect', 'HRD BRCA cluster'), useNA = 'always')
-
-hrd_brca1type <- c('HRD_ID8', 'HRD_APOBEC', 'HRD_IDmult')
-hrd_brca2type <- c('HRD_ID6high', 'HRD_ID6mid')
+hrd_brca1type <- c('HRD_APOBEC', 'HRD_ID6mid', 'HRD_ID8', 'HRD_SBS8')
+hrd_brca2type <- c('HRD_ID6high')
+hrd_undefined <- c('HRD_ID4','HRD_ID9')
 
 ann.hrd$BRCAtype_HRD <- 'HR-proficient'
 ann.hrd$BRCAtype_HRD[ann.hrd$Phenotype %in% hrd_brca1type] <- 'BRCA1-type HRD'
 ann.hrd$BRCAtype_HRD[ann.hrd$Phenotype %in% hrd_brca2type] <- 'BRCA2-type HRD'
+ann.hrd$BRCAtype_HRD[ann.hrd$Phenotype %in% hrd_undefined] <- 'HRD unassigned'
 
 ann.hrd$BRCA_defect_label <- ann.hrd$BRCA_defect
 ann.hrd$BRCA_defect_label[is.na(ann.hrd$BRCA_defect_label)] <- 'BRCA+'
@@ -209,19 +216,18 @@ ann.brca_summary <- ann.hrd %>%
 ann.brca_summary$BRCA_defect_label <- factor(ann.brca_summary$BRCA_defect_label,
                                              levels = c('BRCA1','BRCA2','BRCA+'))
 ann.brca_summary$BRCAtype_HRD <- factor(ann.brca_summary$BRCAtype_HRD,
-                                        levels = c('HR-proficient', 'BRCA2-type HRD', 'BRCA1-type HRD'))
+                                        levels = c('HR-proficient', 'HRD unassigned', 'BRCA2-type HRD', 'BRCA1-type HRD'))
 
 g_annBRCAsummary <- ggplot(ann.brca_summary, aes(x = BRCA_defect_label, y = n, fill = BRCAtype_HRD)) +
   geom_bar(stat = 'identity', position = 'fill') + theme_minimal() +
-  scale_fill_manual(values = c('grey','red','blue')) +
+  scale_fill_manual(values = c('grey90', 'grey50','red','blue')) +
   theme(axis.title.y = element_blank(),
         axis.title.x = element_blank(),
         legend.position = 'top',
-        legend.title = element_blank(),
-        legend.text = element_text(size = 6),
-        legend.key.size = unit(5,'mm'))
-ggsave(filename = 'Figures/Figure1/ICGC_Signatures_BRCAclassify.pdf', 
-       plot = g_annBRCAsummary, width = 3.3, height = 3)
+        legend.title = element_blank()) +
+  guides(col = guide_legend(nrow = 2, byrow = TRUE))
+ggsave(filename = '../Figures/Supp_ICGCBRCAclassify.pdf',
+       plot = g_annBRCAsummary, width = 6, height = 7.5)
 
 # CHORD:
 #   BRCA1: sensitivity = 73.3%, specificity = 55.0%
