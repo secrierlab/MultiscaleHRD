@@ -1,0 +1,15 @@
+cff-version: 1.0.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Daniel"
+  given-names: "JH"
+- family-names: "Pan"
+  given-names: "S"
+- family-names: "Fisher"
+  given-names: "J"
+- family-names: "Secrier"
+  given-names: "M"
+title: "Multi-scale characterisation of homologous recombination deficiency in breast cancer"
+version: 1.0.0
+doi: https://github.com/secrierlab/MultiscaleHRD
+date-released: 2022-12-16
