@@ -1,0 +1,10 @@
+	all_sum
+DC	1096
+T_cell	665
+CancerHRD	326
+Myeloid	1325
+Fibroblast	1215
+EC	1028
+B_cell	511
+CancerHR-proficient	449
+Mast	508

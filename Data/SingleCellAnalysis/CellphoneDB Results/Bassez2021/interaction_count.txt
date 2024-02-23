@@ -1,0 +1,10 @@
+	all_sum
+T_cell	615
+Myeloid_cell	1100
+Cancer_cellHRD	562
+B_cell	415
+Fibroblast	1111
+Cancer_cellHR-proficient	600
+pDC	746
+Endothelial_cell	1009
+Mast_cell	398
